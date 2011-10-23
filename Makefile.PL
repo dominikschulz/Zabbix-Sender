@@ -13,6 +13,12 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
         'Test::More' => 0,
+        'Moose'				=> 1.09,
+        'namespace::autoclean' => 0.09,
+        'JSON' => 2.21,
+        'IO::Socket' => 0,
+        'IO::Select' => 0,
+        'Net::Domain' => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Zabbix-Sender-*' },
