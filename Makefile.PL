@@ -13,7 +13,7 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
         'Test::More' => 0,
-        'Moose'				=> 1.09,
+        'Moose'	=> 1.09,
         'namespace::autoclean' => 0.09,
         'JSON' => 2.21,
         'IO::Socket' => 0,
