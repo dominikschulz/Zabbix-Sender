@@ -10,7 +10,7 @@ use Net::Domain;
 
 =head1 NAME
 
-Zabbix::Sender - The great new Zabbix::Sender!
+Zabbix::Sender - A pure-perl implementation of zabbix-sender.
 
 =head1 VERSION
 
@@ -147,6 +147,7 @@ sub _encode_request {
     my $length = length($json);
     no bytes;
 
+		## no critic (ProhibitBitwiseOperators)
     $output = pack(
         $self->zabbix_template_1_8(),
         "ZBXD", 0x01,
@@ -156,6 +157,7 @@ sub _encode_request {
         ( $length & 0x000000FF ) >> 24,
         0x00, 0x00, 0x00, 0x00, $json
     );
+    ## use critic
 
     return $output;
 }
