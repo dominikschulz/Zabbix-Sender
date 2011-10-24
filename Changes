@@ -1,5 +1,8 @@
 Revision history for Zabbix-Sender
 
-0.01    Date/time
+0.02    24.10.11
+        Fix issues w/ META.yml.
+
+0.01    23.10.11 
         First version, released on an unsuspecting world.
 

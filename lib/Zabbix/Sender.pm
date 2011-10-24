@@ -14,11 +14,11 @@ Zabbix::Sender - A pure-perl implementation of zabbix-sender.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 has 'server' => (
     'is'       => 'rw',

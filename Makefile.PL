@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME                => 'Zabbix::Sender',
-    AUTHOR              => q{"Dominik Schulz" <"lkml@ds.gauner.org">},
+    AUTHOR              => q{Dominik Schulz <lkml@ds.gauner.org>},
     VERSION_FROM        => 'lib/Zabbix/Sender.pm',
     ABSTRACT_FROM       => 'lib/Zabbix/Sender.pm',
     ($ExtUtils::MakeMaker::VERSION >= 6.3002
