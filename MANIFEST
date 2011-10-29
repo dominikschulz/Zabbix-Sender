@@ -2,8 +2,12 @@ Changes
 MANIFEST
 Makefile.PL
 README
+bin/zabbix-sender.pl
 lib/Zabbix/Sender.pm
 t/00-load.t
+t/boilerplat.t
+t/critic.t
+t/kwalitee.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
