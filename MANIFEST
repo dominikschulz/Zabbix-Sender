@@ -5,9 +5,9 @@ README
 bin/zabbix-sender.pl
 lib/Zabbix/Sender.pm
 t/00-load.t
-t/boilerplat.t
+t/boilerplate.t
 t/critic.t
-t/kwalitee.t
+t/kwalittee.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
