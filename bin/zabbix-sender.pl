@@ -12,7 +12,6 @@ my $opts = {
 	'server' => undef,
 	'port' => 10055,
 	'timeout' => 30,
-	'hostname' => undef, # Reported hostname
 };
 
 GetOptions(
@@ -21,15 +20,13 @@ GetOptions(
 	'server=s' => \$opts->{'server'},
 	'port=i'	=> \$opts->{'port'},
 	'timeout=i'	=> \$opts->{'timeout'},
-	'hostname=s'	=> \$opts->{'hostname'},
 );
 
-foreach my $key (sort keys %{$opts}) {
+foreach my $key (qw(item value server)) {
 	if(!defined($opts->{$key})) {
-		die("Usage: $0 --item=X --value=Z --server=Y --port=N --timeout=I --hostname=H");
+		die("Usage: $0 --item=X --value=Z --server=Y [--port=int] [--timeout=int]\n");
 	}
 }
-
 
 my $Sender = Zabbix::Sender->new($opts);
 my $status = $Sender->send($opts->{'item'},$opts->{'value'});
