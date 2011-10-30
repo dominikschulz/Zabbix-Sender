@@ -3,7 +3,7 @@ MANIFEST
 MANIFEST.SKIP
 Makefile.PL
 README
-bin/zabbix-sender.pl
+bin/zabbix-sender
 lib/Zabbix/Sender.pm
 t/00-load.t
 t/boilerplate.t

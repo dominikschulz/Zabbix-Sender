@@ -11,6 +11,7 @@ WriteMakefile(
       ? ('LICENSE'=> 'perl')
       : ()),
     PL_FILES            => {},
+    EXE_FILES           => ['bin/zabbix-sender'],
     PREREQ_PM => {
         'Test::More' => 0,
         'Moose'	=> 1.09,
