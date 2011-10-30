@@ -1,5 +1,6 @@
 Changes
 MANIFEST
+MANIFEST.SKIP
 Makefile.PL
 README
 bin/zabbix-sender.pl
@@ -9,5 +10,6 @@ t/boilerplate.t
 t/critic.t
 t/kwalittee.t
 t/manifest.t
+t/perlcriticrc
 t/pod-coverage.t
 t/pod.t
