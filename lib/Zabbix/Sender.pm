@@ -18,7 +18,7 @@ Version 0.02
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 has 'server' => (
     'is'       => 'rw',
@@ -45,11 +45,29 @@ has 'hostname' => (
     'builder' => '_init_hostname',
 );
 
+has 'interval' => (
+    'is'      => 'rw',
+    'isa'     => 'Int',
+    'default' => 1,
+);
+
+has 'retries' => (
+    'is'      => 'rw',
+    'isa'     => 'Int',
+    'default' => 3,
+);
+
 has '_json' => (
     'is'      => 'rw',
     'isa'     => 'JSON',
     'lazy'    => 1,
     'builder' => '_init_json',
+);
+
+has '_last_sent' => (
+    'is'      => 'rw',
+    'isa'     => 'Int',
+    'default' => 0,
 );
 
 =head1 SYNOPSIS
@@ -77,7 +95,7 @@ So this initializes the JSON object.
 sub _init_json {
     my $self = shift;
 
-    my $JSON = JSON->new->utf8();
+    my $JSON = JSON::->new->utf8();
 
     return $JSON;
 }
@@ -147,7 +165,7 @@ sub _encode_request {
     my $length = length($json);
     no bytes;
 
-		## no critic (ProhibitBitwiseOperators)
+    ## no critic (ProhibitBitwiseOperators)
     $output = pack(
         $self->zabbix_template_1_8(),
         "ZBXD", 0x01,
@@ -172,8 +190,9 @@ sub _decode_answer {
     my $self = shift;
     my $data = shift;
 
-    my $ident = substr( $data, 0, 4 );
-    my $answer = substr( $data, 13 );
+    my ( $ident, $answer );
+    $ident = substr( $data, 0, 4 ) if length($data) > 3;
+    $answer = substr( $data, 13 ) if length($data) > 12;
 
     if ( $ident && $answer ) {
         if ( $ident eq 'ZBXD' ) {
@@ -203,14 +222,42 @@ sub send {
     my $item  = shift;
     my $value = shift;
 
-    my $Socket = IO::Socket::INET->new(
+    my $status = 0;
+    foreach my $i ( 1 .. $self->retries() ) {
+        if ( $self->_send( $item, $value ) ) {
+            $status = 1;
+            last;
+        }
+    }
+
+    if ($status) {
+        return 1;
+    }
+    else {
+        return;
+    }
+
+}
+
+sub _send {
+    my $self  = shift;
+    my $item  = shift;
+    my $value = shift;
+
+    if ( time() - $self->_last_sent() < $self->interval() ) {
+        my $sleep = $self->interval() - ( time() - $self->_last_sent() );
+        $sleep ||= 0;
+        sleep $sleep;
+    }
+
+    my $Socket = IO::Socket::INET::->new(
         PeerAddr => $self->server(),
         PeerPort => $self->port(),
         Proto    => 'tcp',
         Timeout  => $self->timeout(),
     ) or die("Could not create socket: $!");
     $Socket->send( $self->_encode_request( $item, $value ) );
-    my $Select  = IO::Select->new($Socket);
+    my $Select  = IO::Select::->new($Socket);
     my @Handles = $Select->can_read( $self->timeout() );
 
     my $status = 0;
@@ -298,4 +345,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1; # End of Zabbix::Sender
+1;    # End of Zabbix::Sender
