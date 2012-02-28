@@ -145,16 +145,18 @@ sub _encode_request {
     my $self  = shift;
     my $item  = shift;
     my $value = shift;
+    my $clock = shift;
+
+    my $data_ref = {
+        'host'  => $self->hostname(),
+        'key'   => $item,
+        'value' => $value,
+    };
+    $data_ref->{'clock'} = $clock if defined($clock);
 
     my $data = {
         'request' => 'sender data',
-        'data'    => [
-            {
-                'host'  => $self->hostname(),
-                'key'   => $item,
-                'value' => $value,
-            }
-        ],
+        'data'    => [$data_ref],
     };
 
     my $output = '';
@@ -221,10 +223,11 @@ sub send {
     my $self  = shift;
     my $item  = shift;
     my $value = shift;
+    my $clock = shift;
 
     my $status = 0;
     foreach my $i ( 1 .. $self->retries() ) {
-        if ( $self->_send( $item, $value ) ) {
+        if ( $self->_send( $item, $value, $clock ) ) {
             $status = 1;
             last;
         }
@@ -243,6 +246,7 @@ sub _send {
     my $self  = shift;
     my $item  = shift;
     my $value = shift;
+    my $clock = shift;
 
     if ( time() - $self->_last_sent() < $self->interval() ) {
         my $sleep = $self->interval() - ( time() - $self->_last_sent() );
@@ -256,7 +260,7 @@ sub _send {
         Proto    => 'tcp',
         Timeout  => $self->timeout(),
     ) or die("Could not create socket: $!");
-    $Socket->send( $self->_encode_request( $item, $value ) );
+    $Socket->send( $self->_encode_request( $item, $value, $clock ) );
     my $Select  = IO::Select::->new($Socket);
     my @Handles = $Select->can_read( $self->timeout() );
 
