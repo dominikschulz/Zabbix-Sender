@@ -57,6 +57,12 @@ has 'retries' => (
     'default' => 3,
 );
 
+has 'keepalive' => (
+    'is'    => 'rw',
+    'isa'   => 'Bool',
+    'default' => 0,
+);
+
 has '_json' => (
     'is'      => 'rw',
     'isa'     => 'JSON',
@@ -68,6 +74,11 @@ has '_last_sent' => (
     'is'      => 'rw',
     'isa'     => 'Int',
     'default' => 0,
+);
+
+has '_socket' => (
+    'is'    => 'rw',
+    'isa'   => 'Maybe[IO::Socket]',
 );
 
 =head1 SYNOPSIS
@@ -254,31 +265,68 @@ sub _send {
         sleep $sleep;
     }
 
-    my $Socket = IO::Socket::INET::->new(
-        PeerAddr => $self->server(),
-        PeerPort => $self->port(),
-        Proto    => 'tcp',
-        Timeout  => $self->timeout(),
-    ) or die("Could not create socket: $!");
-    $Socket->send( $self->_encode_request( $item, $value, $clock ) );
-    my $Select  = IO::Select::->new($Socket);
+    $self->_connect() unless $self->_socket();
+    $self->_socket()->send( $self->_encode_request( $item, $value, $clock ) );
+    my $Select  = IO::Select::->new($self->_socket());
     my @Handles = $Select->can_read( $self->timeout() );
 
     my $status = 0;
     if ( scalar(@Handles) > 0 ) {
         my $result;
-        $Socket->recv( $result, 1024 );
+        $self->_socket()->recv( $result, 1024 );
         if ( $self->_decode_answer($result) ) {
             $status = 1;
         }
     }
-    $Socket->close();
+    $self->_disconnect() unless $self->keepalive();
     if ($status) {
         return $status;
     }
     else {
         return;
     }
+}
+
+sub _connect {
+    my $self = shift;
+
+    my $Socket = IO::Socket::INET::->new(
+        PeerAddr => $self->server(),
+        PeerPort => $self->port(),
+        Proto    => 'tcp',
+        Timeout  => $self->timeout(),
+    ) or die("Could not create socket: $!");
+
+    $self->_socket($Socket);
+
+    return 1;
+}
+
+sub _disconnect {
+    my $self = shift;
+
+    if(!$self->_socket()) {
+        return;
+    }
+
+    $self->_socket()->close();
+    $self->_socket(undef);
+
+    return 1;
+}
+
+=head2 DEMOLISH
+
+Disconnects any open sockets on destruction.
+
+=cut
+
+sub DEMOLISH {
+    my $self = shift;
+
+    $self->_disconnect();
+
+    return 1;
 }
 
 no Moose;
