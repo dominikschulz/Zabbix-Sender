@@ -36,3 +36,10 @@ if ($status) {
 else {
     exit 1;
 }
+
+=head1 NAME
+
+zabbix-sender
+
+=cut
+
