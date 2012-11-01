@@ -1,4 +1,5 @@
 package Zabbix::Sender;
+# ABSTRACT: A pure-perl implementation of zabbix-sender.
 
 use Moose;
 use namespace::autoclean;
@@ -11,6 +12,8 @@ use Net::Domain;
 =head1 NAME
 
 Zabbix::Sender - A pure-perl implementation of zabbix-sender.
+
+=cut
 
 has 'server' => (
     'is'       => 'rw',
@@ -378,7 +381,7 @@ This code is based on the documentation and sample code found at:
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2011 "Dominik Schulz".
+Copyright 2011 Dominik Schulz.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
