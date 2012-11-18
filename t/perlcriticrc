@@ -1,4 +1,4 @@
-exclude = RegularExpressions::RequireDotMatchAnything RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireLineBoundaryMatching Miscellanea::RequireRcsKeywords 
+exclude = RegularExpressions::RequireDotMatchAnything RegularExpressions::RequireExtendedFormatting RegularExpressions::RequireLineBoundaryMatching Miscellanea::RequireRcsKeywords TestingAndDebugging::RequireUseStrict
 verbose = %f: %m at line %l, col %c. %e (Sev: %s) [%p] \n%d\n
 color = 1
 
