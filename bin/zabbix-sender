@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# PODNAME: zabbix-sender
 
 use strict;
 use warnings;
