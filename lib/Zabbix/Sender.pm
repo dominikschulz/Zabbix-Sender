@@ -126,7 +126,7 @@ ZABBIX 1.8 TEMPLATE
 
 a4 - ZBXD
 b  - 0x01
-c4 - Length of Request in Bytes (64-bit integer), aligned left, padded with 0x00
+c4 - Length of Request in Bytes (64-bit integer), aligned left (little-endian), padded with 0x00
 c4 - dito
 a* - JSON encoded request
 
@@ -137,7 +137,7 @@ This may be changed to a HashRef if future version of zabbix change the header t
 has 'zabbix_template_1_8' => (
     'is'      => 'ro',
     'isa'     => 'Str',
-    'default' => "a4 b c4 c4 a*",
+    'default' => "a4 b V2 a*",
 );
 
 =head2 _encode_request
@@ -177,11 +177,9 @@ sub _encode_request {
     $output = pack(
         $self->zabbix_template_1_8(),
         "ZBXD", 0x01,
-        ( $length & 0xFF ),
-        ( $length & 0x00FF ) >> 8,
-        ( $length & 0x0000FF ) >> 16,
-        ( $length & 0x000000FF ) >> 24,
-        0x00, 0x00, 0x00, 0x00, $json
+		($length & 0xFFFFFFFF),
+		($length >> 32),
+		$json
     );
     ## use critic
 
