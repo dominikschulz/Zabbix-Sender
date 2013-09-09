@@ -1,5 +1,8 @@
 Revision history for Zabbix-Sender
 
+0.04    2013-09-09
+        Fix broken length handling. Thanks to Erik Østlyngen.
+
 0.03    2012-11-18
         Add more author tests.
 
