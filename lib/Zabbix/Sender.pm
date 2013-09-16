@@ -258,7 +258,10 @@ sub _send {
         sleep $sleep;
     }
 
-    $self->_connect() unless $self->_socket();
+	unless ($self->_socket()) {
+		return
+			unless $self->_connect();
+	}
     $self->_socket()->send( $self->_encode_request( $item, $value, $clock ) );
     my $Select  = IO::Select::->new($self->_socket());
     my @Handles = $Select->can_read( $self->timeout() );
@@ -288,7 +291,7 @@ sub _connect {
         PeerPort => $self->port(),
         Proto    => 'tcp',
         Timeout  => $self->timeout(),
-    ) or die("Could not create socket: $!");
+    ) or return;
 
     $self->_socket($Socket);
 
