@@ -260,10 +260,10 @@ sub _send {
         sleep $sleep;
     }
 
-	unless ($self->_socket()) {
-		return
-			unless $self->_connect();
-	}
+    unless ($self->_socket()) {
+        return
+            unless $self->_connect();
+    }
     $self->_socket()->send( $self->_encode_request( $item, $value, $clock ) );
     my $Select  = IO::Select::->new($self->_socket());
     my @Handles = $Select->can_read( $self->timeout() );
