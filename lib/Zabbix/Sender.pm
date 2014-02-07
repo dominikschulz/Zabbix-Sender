@@ -370,8 +370,6 @@ This code is based on the documentation and sample code found at:
 
 =over 4
 
-=item http://www.zabbix.com/wiki/doc/tech/proto/zabbixsenderprotocol
-
 =item http://www.zabbix.com/documentation/1.8/protocols
 
 =back
