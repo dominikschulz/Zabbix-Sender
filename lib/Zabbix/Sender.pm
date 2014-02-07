@@ -126,8 +126,8 @@ ZABBIX 1.8 TEMPLATE
 
 a4 - ZBXD
 b  - 0x01
-c4 - Length of Request in Bytes (64-bit integer), aligned left, padded with 0x00
-c4 - dito
+V - Length of Request in Bytes (64-bit integer), aligned left, padded with 0x00, low 32 bits
+V - High 32 bits of length (always 0 in Zabbix::Sender)
 a* - JSON encoded request
 
 This may be changed to a HashRef if future version of zabbix change the header template.
@@ -143,7 +143,7 @@ has 'zabbix_template_1_8' => (
 =head2 _encode_request
 
 This method encodes the item and value as a json string and creates
-the required header acording to the template defined above.
+the required header according to the template defined above.
 
 =cut
 
