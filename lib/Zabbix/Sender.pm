@@ -4,6 +4,7 @@ package Zabbix::Sender;
 use Moose;
 use namespace::autoclean;
 
+use Carp;
 use JSON;
 use IO::Socket;
 use IO::Select;
@@ -74,6 +75,18 @@ has '_last_sent' => (
 has '_socket' => (
     'is'    => 'rw',
     'isa'   => 'Maybe[IO::Socket]',
+);
+
+has 'response' => (
+    'is'    => 'rw',
+    'isa'   => 'HashRef',
+    'default'   => sub { {} },
+);
+
+has '_values' => (
+    'is'    => 'ro',
+    'isa'   => 'ArrayRef',
+    'default'   => sub { [] },
 );
 
 =head1 SYNOPSIS
@@ -149,20 +162,21 @@ the required header according to the template defined above.
 
 sub _encode_request {
     my $self  = shift;
-    my $item  = shift;
-    my $value = shift;
-    my $clock = shift;
+    my $values = shift;
 
-    my $data_ref = {
-        'host'  => $self->hostname(),
-        'key'   => $item,
-        'value' => $value,
-    };
-    $data_ref->{'clock'} = $clock if defined($clock);
+    my @data;
+    for my $ref (@{$values}) {
+        push @data, {
+            'host'  => $ref->[0],
+            'key'   => $ref->[1],
+            'value' => $ref->[2],
+            'clock' => $ref->[3],
+        }
+    }
 
     my $data = {
         'request' => 'sender data',
-        'data'    => [$data_ref],
+        'data'    => \@data,
     };
 
     my $output = '';
@@ -189,6 +203,9 @@ sub _encode_request {
 
 This method tries to decode the answer received from the server.
 
+Returns true if response indicates success, false if response indicates
+failure, undefined value if response was empty or cannot be decoded.
+
 =cut
 
 sub _decode_answer {
@@ -197,14 +214,25 @@ sub _decode_answer {
 
     my ( $ident, $answer );
     $ident = substr( $data, 0, 4 ) if length($data) > 3;
-    $answer = substr( $data, 13 ) if length($data) > 12;
+    if ($ident and $ident eq 'ZBXD') {
+        # Headers are optional since Zabbix 2.0.8 and 2.1.7
+        if (length($data) > 12) {
+            $answer = substr( $data, 13 );
+        } else {
+            croak "Invalid response header received";
+            return;
+        }
+    } else {
+        $answer = $data;
+    }
 
-    if ( $ident && $answer ) {
-        if ( $ident eq 'ZBXD' ) {
-            my $ref = $self->_json()->decode($answer);
-            if ( $ref->{'response'} eq 'success' ) {
-                return 1;
-            }
+    if ( $answer ) {
+        my $ref = $self->_json()->decode($answer);
+        if ($ref) {
+            $self->response($ref);
+            return $ref->{'response'} eq 'success' ? 1 : '';
+        } else {
+            $self->response(undef);
         }
     }
     return;
@@ -226,11 +254,12 @@ sub send {
     my $self  = shift;
     my $item  = shift;
     my $value = shift;
-    my $clock = shift;
+    my $clock = shift || time;
 
+    my $data = $self->_encode_request( [ [ $self->hostname(), $item, $value, $clock ] ] );
     my $status = 0;
     foreach my $i ( 1 .. $self->retries() ) {
-        if ( $self->_send( $item, $value, $clock ) ) {
+        if ( $self->_send( $data ) ) {
             $status = 1;
             last;
         }
@@ -247,9 +276,7 @@ sub send {
 
 sub _send {
     my $self  = shift;
-    my $item  = shift;
-    my $value = shift;
-    my $clock = shift;
+    my $data  = shift;
 
     if ( time() - $self->_last_sent() < $self->interval() ) {
         my $sleep = $self->interval() - ( time() - $self->_last_sent() );
@@ -261,7 +288,7 @@ sub _send {
         return
             unless $self->_connect();
     }
-    $self->_socket()->send( $self->_encode_request( $item, $value, $clock ) );
+    $self->_socket()->send( $data );
     my $Select  = IO::Select::->new($self->_socket());
     my @Handles = $Select->can_read( $self->timeout() );
 
@@ -308,6 +335,121 @@ sub _disconnect {
     $self->_socket(undef);
 
     return 1;
+}
+
+=head2 bulk_buf_add
+
+Adds values to the stack of values to bulk_send.
+
+It accepts arguments in forms:
+
+$sender->bulk_buf_add($key, $value, $clock, ...);
+$sender->bulk_buf_add([$key, $value, $clock], ...);
+$sender->bulk_buf_add($hostname, [ [$key, $value, $clock], ...], ...);
+
+Last form allows to add values for several hosts at once.
+
+$clock is optional and may be undef, empty or omitted.
+
+=cut
+
+sub bulk_buf_add {
+    my $self = shift;
+
+    my @values;
+    while (@_) {
+        my $arg = shift;
+        if ($arg) {
+            if (ref $arg) {
+                if (ref $arg eq 'ARRAY' and (@{$arg} == 2 or @{$arg} == 3)) {
+                    # Array of (key, value[, clock])
+                    push @values, [ $self->hostname(),
+                        $arg->[0], $arg->[1], $arg->[2] || time ];
+                } else {
+                    croak "Invalid argument";
+                    return;
+                }
+            } else {
+                my $arg2 = shift;
+                if ($arg2) {
+                    if (ref $arg2) {
+                        unless (ref $arg2 eq 'ARRAY') {
+                            croak "Invalid argument";
+                            return;
+                        }
+                        my $hostname = $arg;
+                        for my $ref (@{$arg2}) {
+                            if (ref $ref and ref $ref eq 'ARRAY'
+                                    and (@{$ref} == 2 or @{$ref} == 3)) {
+                                # (key, value[, clock])
+                                $ref->[2] = time
+                                    unless $ref->[2];
+                                push @values, [ $hostname, $ref->[0],
+                                    $ref->[1], $ref->[2] || time ];
+                            } else {
+                                croak "Invalid argument";
+                                return;
+                            }
+                        }
+                    } else {
+                        # (hostname, key, value[, clock])
+                        my $key = $arg;
+                        my $value = $arg2;
+                        my $clock = shift || time;
+                        push @values, [ $self->hostname(), $key, $value, $clock ];
+                    }
+                } else {
+                    croak "Insufficient number of arguments";
+                    return;
+                }
+            }
+        } else {
+            croak "Insufficient number of arguments";
+            return;
+        }
+    }
+
+    push @{$self->_values()}, @values;
+    return 1;
+}
+
+sub bulk_buf_clear {
+    my $self = shift;
+
+    @{$self->_values()} = ();
+}
+
+=head2 bulk_send
+
+Same as bulk_buf_add, but also send all added values to the server at the end.
+
+=cut
+
+sub bulk_send {
+    my $self  = shift;
+
+    if (@_) {
+        $self->bulk_buf_add(@_)
+            or return;
+    }
+
+    my $data = $self->_encode_request( $self->_values() );
+    my $status = 0;
+    foreach my $i ( 1 .. $self->retries() ) {
+        if ( $self->_send( $data ) ) {
+            $status = 1;
+            last;
+        }
+    }
+
+    if ($status) {
+        $self->bulk_buf_clear();
+        return 1;
+    }
+    else {
+        return;
+    }
+
 }
 
 =head2 DEMOLISH
