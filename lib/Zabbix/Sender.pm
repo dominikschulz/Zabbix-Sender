@@ -126,8 +126,8 @@ ZABBIX 1.8 TEMPLATE
 
 a4 - ZBXD
 b  - 0x01
-c4 - Length of Request in Bytes (64-bit integer), aligned left (little-endian), padded with 0x00
-c4 - dito
+V - Length of Request in Bytes (64-bit integer), aligned left, padded with 0x00, low 32 bits
+V - High 32 bits of length (always 0 in Zabbix::Sender)
 a* - JSON encoded request
 
 This may be changed to a HashRef if future version of zabbix change the header template.
@@ -137,13 +137,13 @@ This may be changed to a HashRef if future version of zabbix change the header t
 has 'zabbix_template_1_8' => (
     'is'      => 'ro',
     'isa'     => 'Str',
-    'default' => "a4 b C4 c4 a*",
+    'default' => "a4 b V V a*",
 );
 
 =head2 _encode_request
 
 This method encodes the item and value as a json string and creates
-the required header acording to the template defined above.
+the required header according to the template defined above.
 
 =cut
 
@@ -177,11 +177,8 @@ sub _encode_request {
     $output = pack(
         $self->zabbix_template_1_8(),
         "ZBXD", 0x01,
-        ( $length & 0xFF ),
-        ( $length & 0xFF00 ) >> 8,
-        ( $length & 0xFF0000 ) >> 16,
-        ( $length & 0xFF000000 ) >> 24,
-        0x00, 0x00, 0x00, 0x00, $json
+        $length, 0x00,
+        $json
     );
     ## use critic
 
@@ -375,8 +372,6 @@ L<http://search.cpan.org/dist/Zabbix-Sender/>
 This code is based on the documentation and sample code found at:
 
 =over 4
-
-=item http://www.zabbix.com/wiki/doc/tech/proto/zabbixsenderprotocol
 
 =item http://www.zabbix.com/documentation/1.8/protocols
 
