@@ -83,8 +83,8 @@ has 'response' => (
     'default'   => sub { {} },
 );
 
-has '_values' => (
-    'is'    => 'ro',
+has 'bulk_buf' => (
+    'is'    => 'rw',
     'isa'   => 'ArrayRef',
     'default'   => sub { [] },
 );
@@ -409,14 +409,14 @@ sub bulk_buf_add {
         }
     }
 
-    push @{$self->_values()}, @values;
+    push @{$self->bulk_buf()}, @values;
     return 1;
 }
 
 sub bulk_buf_clear {
     my $self = shift;
 
-    @{$self->_values()} = ();
+    $self->bulk_buf([]);
 }
 
 =head2 bulk_send
@@ -433,7 +433,7 @@ sub bulk_send {
             or return;
     }
 
-    my $data = $self->_encode_request( $self->_values() );
+    my $data = $self->_encode_request( $self->bulk_buf() );
     my $status = 0;
     foreach my $i ( 1 .. $self->retries() ) {
         if ( $self->_send( $data ) ) {
