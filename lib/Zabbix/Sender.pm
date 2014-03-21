@@ -420,6 +420,12 @@ sub bulk_buf_add {
     return 1;
 }
 
+=head2 bulk_buf_clear
+
+Clear bulk_send buffer.
+
+=cut
+
 sub bulk_buf_clear {
     my $self = shift;
 
