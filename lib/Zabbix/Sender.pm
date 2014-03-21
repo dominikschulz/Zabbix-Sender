@@ -166,12 +166,14 @@ sub _encode_request {
 
     my @data;
     for my $ref (@{$values}) {
-        push @data, {
+        my %data = (
             'host'  => $ref->[0],
             'key'   => $ref->[1],
             'value' => $ref->[2],
-            'clock' => $ref->[3],
-        }
+        );
+        $data{'clock'} = $ref->[3]
+            if $ref->[3];
+        push @data, \%data;
     }
 
     my $data = {
