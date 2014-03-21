@@ -155,7 +155,7 @@ has 'zabbix_template_1_8' => (
 
 =head2 _encode_request
 
-This method encodes the item and value as a json string and creates
+This method encodes values as a json string and creates
 the required header according to the template defined above.
 
 =cut
@@ -208,6 +208,8 @@ This method tries to decode the answer received from the server.
 Returns true if response indicates success, false if response indicates
 failure, undefined value if response was empty or cannot be decoded.
 
+Method "response" may be used to return decoded response.
+
 =cut
 
 sub _decode_answer {
@@ -244,7 +246,8 @@ sub _decode_answer {
 
 Send the given item with the given value to the server.
 
-Takes two arguments: item and value. Both should be scalars.
+Takes two or three scalar arguments: item key, value and clock (clock is
+optional).
 
 =cut
 
@@ -353,6 +356,8 @@ Last form allows to add values for several hosts at once.
 
 $clock is optional and may be undef, empty or omitted.
 
+Returns true if successful or undef if invalid arguments are specified.
+
 =cut
 
 sub bulk_buf_add {
@@ -423,7 +428,10 @@ sub bulk_buf_clear {
 
 =head2 bulk_send
 
-Same as bulk_buf_add, but also send all added values to the server at the end.
+Send accumulated values to the server.
+
+It accepts the same arguments as bulk_buf_add. If arguments are specified,
+they are added to the buffer before sending.
 
 =cut
 
