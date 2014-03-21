@@ -223,7 +223,7 @@ sub _decode_answer {
         if (length($data) > 12) {
             $answer = substr( $data, 13 );
         } else {
-            croak "Invalid response header received";
+            carp "Invalid response header received";
             return;
         }
     } else {
@@ -373,7 +373,7 @@ sub bulk_buf_add {
                     push @values, [ $self->hostname(),
                         $arg->[0], $arg->[1], $arg->[2] || time ];
                 } else {
-                    croak "Invalid argument";
+                    carp "Invalid argument";
                     return;
                 }
             } else {
@@ -381,7 +381,7 @@ sub bulk_buf_add {
                 if ($arg2) {
                     if (ref $arg2) {
                         unless (ref $arg2 eq 'ARRAY') {
-                            croak "Invalid argument";
+                            carp "Invalid argument";
                             return;
                         }
                         my $hostname = $arg;
@@ -394,7 +394,7 @@ sub bulk_buf_add {
                                 push @values, [ $hostname, $ref->[0],
                                     $ref->[1], $ref->[2] || time ];
                             } else {
-                                croak "Invalid argument";
+                                carp "Invalid argument";
                                 return;
                             }
                         }
@@ -406,12 +406,12 @@ sub bulk_buf_add {
                         push @values, [ $self->hostname(), $key, $value, $clock ];
                     }
                 } else {
-                    croak "Insufficient number of arguments";
+                    carp "Insufficient number of arguments";
                     return;
                 }
             }
         } else {
-            croak "Insufficient number of arguments";
+            carp "Insufficient number of arguments";
             return;
         }
     }
