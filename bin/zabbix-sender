@@ -4,6 +4,7 @@
 use strict;
 use warnings;
 
+use lib 'lib';
 use Getopt::Long;
 use Zabbix::Sender;
 
@@ -15,6 +16,8 @@ my $opts = {
     'timeout' => 30,
 };
 
+my $show_info;
+
 GetOptions(
     'item=s'    => \$opts->{'item'},
     'value=s'   => \$opts->{'value'},
@@ -22,6 +25,7 @@ GetOptions(
     'port=i'    => \$opts->{'port'},
     'timeout=i' => \$opts->{'timeout'},
     'hostname=s' => \$opts->{'hostname'},
+    'info'      => \$show_info,
 );
 
 foreach my $key (qw(item value server)) {
@@ -33,6 +37,8 @@ foreach my $key (qw(item value server)) {
 delete $opts->{'hostname'} unless defined $opts->{'hostname'};
 my $Sender = Zabbix::Sender->new($opts);
 my $status = $Sender->send( $opts->{'item'}, $opts->{'value'} );
+print $Sender->_info(), "\n" if $show_info;
+
 if ($status) {
     exit 0;
 }

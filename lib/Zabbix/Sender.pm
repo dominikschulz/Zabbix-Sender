@@ -87,6 +87,16 @@ has 'bulk_buf' => (
     'is'    => 'rw',
     'isa'   => 'ArrayRef',
     'default'   => sub { [] },
+
+has '_info' => (
+    'is'    => 'rw',
+    'isa'      => 'Str',
+);
+
+has 'strict' => (
+    'is'    => 'rw',
+    'isa'   => 'Bool',
+    'default' => 0,
 );
 
 =head1 SYNOPSIS
@@ -201,6 +211,17 @@ sub _encode_request {
     return $output;
 }
 
+sub _check_info {
+    my $self = shift;
+    if($self->_info() !~ /^Processed (\d+) Failed (\d+) Total (\d+) Seconds spent \d+.\d+$/)
+    {
+        return "Failed to parse info from zabbix server: ", $self->_info();
+    }
+    my($processed, $failed, $total) = ($1, $2, $3);
+    return if int($processed) eq 1 and int($failed) eq 0 and int($total) eq 1;
+    return "(Processed, failed, total) != (1, 0, 1) in info from zabbix server: ", $self->_info()
+}
+
 =head2 _decode_answer
 
 This method tries to decode the answer received from the server.
@@ -234,6 +255,10 @@ sub _decode_answer {
         my $ref = $self->_json()->decode($answer);
         if ($ref) {
             $self->response($ref);
+            if ( $ref->{'response'} eq 'success' ) {
+                $self->_info($ref->{'info'});
+                return 1;
+            }
             return $ref->{'response'} eq 'success' ? 1 : '';
         } else {
             $self->response(undef);
@@ -271,6 +296,11 @@ sub send {
     }
 
     if ($status) {
+        if($self->strict())
+        {
+          my $msg = $self->_check_info();
+          warn $msg if $msg;
+        }
         return 1;
     }
     else {
