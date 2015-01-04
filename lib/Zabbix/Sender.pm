@@ -87,6 +87,7 @@ has 'bulk_buf' => (
     'is'    => 'rw',
     'isa'   => 'ArrayRef',
     'default'   => sub { [] },
+);
 
 has '_info' => (
     'is'    => 'rw',
@@ -244,7 +245,7 @@ sub _decode_answer {
         if (length($data) > 12) {
             $answer = substr( $data, 13 );
         } else {
-            carp "Invalid response header received";
+            carp "Invalid response header received: '$data' (length: ", length($data), ")";
             return;
         }
     } else {
@@ -325,15 +326,29 @@ sub _send {
     }
     $self->_socket()->send( $data );
     my $Select  = IO::Select::->new($self->_socket());
-    my @Handles = $Select->can_read( $self->timeout() );
-
     my $status = 0;
-    if ( scalar(@Handles) > 0 ) {
+    my $recvstarttime = time;
+    my $reply = '';
+    while($recvstarttime + $self->timeout() > time)
+    {
+      my @Handles = $Select->can_read( $self->timeout() );
+
+      if ( scalar(@Handles) > 0 ) {
         my $result;
         $self->_socket()->recv( $result, 1024 );
-        if ( $self->_decode_answer($result) ) {
+        $reply .= $result;
+        next if length($reply) < 13;
+        # we need to recv until we have read either as much data as indicated
+        # in the header or there is an error.  so we have to decode the header
+        # here, before calling _decode_answer.
+        my($ZBXD, $one, $len1, $len2, $json) = unpack 'A4 C V2 A*', $reply;
+        my $expected_length = 13 + $len1 + ($len2 << 32);
+        next if length($reply) < $expected_length;
+        if ( $self->_decode_answer($reply) ) {
             $status = 1;
         }
+        last;
+      }
     }
     $self->_disconnect() unless $self->keepalive();
     if ($status) {
@@ -403,7 +418,7 @@ sub bulk_buf_add {
                     push @values, [ $self->hostname(),
                         $arg->[0], $arg->[1], $arg->[2] || time ];
                 } else {
-                    carp "Invalid argument";
+                    carp "Invalid argument: Expected ARRAY with 2 or 3 elements";
                     return;
                 }
             } else {
@@ -411,7 +426,7 @@ sub bulk_buf_add {
                 if ($arg2) {
                     if (ref $arg2) {
                         unless (ref $arg2 eq 'ARRAY') {
-                            carp "Invalid argument";
+                            carp "Invalid argument: Expected ARRAY";
                             return;
                         }
                         my $hostname = $arg;
@@ -424,12 +439,12 @@ sub bulk_buf_add {
                                 push @values, [ $hostname, $ref->[0],
                                     $ref->[1], $ref->[2] || time ];
                             } else {
-                                carp "Invalid argument";
+                                carp "Invalid argument: ARRAY had not 2 or 3 elements";
                                 return;
                             }
                         }
                     } else {
-                        # (hostname, key, value[, clock])
+                        # (key, value[, clock])
                         my $key = $arg;
                         my $value = $arg2;
                         my $clock = shift || time;
