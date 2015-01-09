@@ -108,12 +108,25 @@ to the zabbix server/proxy at "my.zabbix.server.example" on port "10055".
     use Zabbix::Sender;
 
     my $Sender = Zabbix::Sender->new({
-    	'server' => 'my.zabbix.server.example',
-    	'port' => 10055,
+       'server' => 'my.zabbix.server.example',
+       'port' => 10055,
     });
     $Sender->send('my.zabbix.item','OK');
 
 =head1 SUBROUTINES/METHODS
+
+=head2 strict
+
+Use the strict setting to make Zabbix::Sender check the return values from
+Zabbix:
+
+    $Sender->strict(1);
+
+You can also query the current setting using
+
+    my $is_strict = $Sender->strict();
+
+=cut
 
 =head2 _init_json
 
@@ -212,15 +225,31 @@ sub _encode_request {
     return $output;
 }
 
+=head2 _check_info
+
+Checks the return value from the Zabbix server (or Zabbix proxy),
+which states the number of processed, failed and total values.
+Returns undef if everything is alright, a message otherwise.
+
+This method is called when the strict setting of Zabbix::Sender
+is active:
+
+    my $Sender = Zabbix::Sender->new({
+        'server' => 'my.zabbix.server.example',
+        'strict' => 1,
+    });
+
+=cut
+
 sub _check_info {
     my $self = shift;
     if($self->_info() !~ /^Processed (\d+) Failed (\d+) Total (\d+) Seconds spent \d+.\d+$/)
     {
         return "Failed to parse info from zabbix server: ", $self->_info();
     }
-    my($processed, $failed, $total) = ($1, $2, $3);
-    return if int($processed) eq 1 and int($failed) eq 0 and int($total) eq 1;
-    return "(Processed, failed, total) != (1, 0, 1) in info from zabbix server: ", $self->_info()
+    my($processed, $failed, $total) = (int($1), int($2), int($3));
+    return if $processed eq $total and $failed eq 0;
+    return "(Processed, failed, total) != (x, 0, x) in info from zabbix server: ", $self->_info()
 }
 
 =head2 _decode_answer
@@ -238,6 +267,7 @@ sub _decode_answer {
     my $self = shift;
     my $data = shift;
 
+    $self->_info('');
     my ( $ident, $answer );
     $ident = substr( $data, 0, 4 ) if length($data) > 3;
     if ($ident and $ident eq 'ZBXD') {
@@ -258,6 +288,12 @@ sub _decode_answer {
             $self->response($ref);
             if ( $ref->{'response'} eq 'success' ) {
                 $self->_info($ref->{'info'});
+                if($self->strict())
+                {
+                    my $msg = $self->_check_info();
+                    carp $msg if $msg;
+                    return 0 if $msg;
+                }
                 return 1;
             }
             return $ref->{'response'} eq 'success' ? 1 : '';
@@ -297,11 +333,6 @@ sub send {
     }
 
     if ($status) {
-        if($self->strict())
-        {
-          my $msg = $self->_check_info();
-          warn $msg if $msg;
-        }
         return 1;
     }
     else {
