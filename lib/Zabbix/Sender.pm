@@ -115,6 +115,23 @@ to the zabbix server/proxy at "my.zabbix.server.example" on port "10055".
 
 =head1 SUBROUTINES/METHODS
 
+=head2 hostname
+
+Name of the host for which to submit items to Zabbix.  Initialized by _init_hostname. You can set it either using
+
+   $Sender->hostname('another.hostname');
+
+or during creation time of Zabbix::Sender
+
+    my $Sender = Zabbix::Sender->new({
+        'server' => 'my.zabbix.server.example',
+        'hostname' => 'another.hostname',
+    });
+
+You can also query the current setting using
+
+    my $current_hostname = $Sender->hostname();
+
 =head2 strict
 
 Use the strict setting to make Zabbix::Sender check the return values from
