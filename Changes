@@ -1,5 +1,8 @@
 Revision history for Zabbix-Sender
 
+0.05    2016-08-22
+        Fix strict mode. Thanks to whosgonna.
+
 0.04    2013-09-09
         Fix broken length handling. Thanks to Erik Østlyngen.
 
