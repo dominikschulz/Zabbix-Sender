@@ -350,9 +350,9 @@ sub send {
     }
 
     if ($status) {
-        return 1;
+        return $self->response;
     }
-    else {
+    else { ## Should this die/croak/warn? Is this for timeout?
         return;
     }
 
