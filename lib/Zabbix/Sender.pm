@@ -260,7 +260,7 @@ is active:
 
 sub _check_info {
     my $self = shift;
-    if($self->_info() !~ /^Processed (\d+) Failed (\d+) Total (\d+) Seconds spent \d+.\d+$/)
+    if($self->_info() !~ /^Processed:?\s+(\d+);?\s+Failed:?\s+(\d+);?\s+Total:?\s+(\d+);?\s+Seconds\s+spent:?\s+\d+.\d+$/i )
     {
         return "Failed to parse info from zabbix server: ", $self->_info();
     }
