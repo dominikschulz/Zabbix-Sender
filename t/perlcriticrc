@@ -7,7 +7,7 @@ severity = 4
 allow = if unless
 
 [Modules::ProhibitEvilModules]
-modules = Switch 
+modules = Switch
 
 [InputOutput::RequireBriefOpen]
 severity = 3

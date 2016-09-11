@@ -1,6 +1,8 @@
 use warnings;
 use strict;
 use Test::More tests => 10;
+use Test::Deep;
+use JSON::XS;
 use_ok 'Zabbix::Sender';
 
 # First, encode a short request and decode it in two ways:
@@ -23,7 +25,17 @@ cmp_ok($list[1], '==', 1, 'Zabbix Header "1"');
 cmp_ok($list[2], '==', length($list[4]), 'Message Length (low 32 bit)');
 cmp_ok($list[2], '==', length($testmsg), 'Message Length (low 32 bit)');
 cmp_ok($list[3], '==', 0, 'Message Length (high 32 bit)');
-cmp_ok($list[4], 'eq', $testmsg, 'JSON Test Message');
+my $res = decode_json($list[4]);
+cmp_deeply {
+  request => "sender data",
+  data => [
+    {
+      value => 42,
+      key => 'test',
+      host => 'sender',
+    }
+  ]
+}, $res;
 
 # 2. The second way uses unpack 'C'
 my @list2 = unpack 'a4 b C4 V a*', $encoded;
