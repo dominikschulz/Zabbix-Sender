@@ -1,5 +1,8 @@
 Revision history for Zabbix-Sender
 
+0.06    2016-09-11
+        Fix some failing tests.
+
 0.05    2016-08-22
         Fix strict mode. Thanks to whosgonna.
 
