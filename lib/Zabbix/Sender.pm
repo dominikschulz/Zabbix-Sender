@@ -1,7 +1,7 @@
 package Zabbix::Sender;
 # ABSTRACT: A pure-perl implementation of zabbix-sender.
 
-use Moose;
+use Moo;
 use namespace::autoclean;
 
 use Carp;
@@ -9,6 +9,7 @@ use JSON;
 use IO::Socket;
 use IO::Select;
 use Net::Domain;
+use Types::Standard -types;
 
 =head1 NAME
 
@@ -18,85 +19,85 @@ Zabbix::Sender - A pure-perl implementation of zabbix-sender.
 
 has 'server' => (
     'is'       => 'rw',
-    'isa'      => 'Str',
+    'isa'      => Str,
     'required' => 1,
 );
 
 has 'port' => (
     'is'      => 'rw',
-    'isa'     => 'Int',
+    'isa'     => Int,
     'default' => 10051,
 );
 
 has 'timeout' => (
     'is'      => 'rw',
-    'isa'     => 'Int',
+    'isa'     => Int,
     'default' => 30,
 );
 
 has 'hostname' => (
     'is'      => 'rw',
-    'isa'     => 'Str',
+    'isa'     => Str,
     'lazy'    => 1,
     'builder' => '_init_hostname',
 );
 
 has 'interval' => (
     'is'      => 'rw',
-    'isa'     => 'Int',
+    'isa'     => Int,
     'default' => 1,
 );
 
 has 'retries' => (
     'is'      => 'rw',
-    'isa'     => 'Int',
+    'isa'     => Int,
     'default' => 3,
 );
 
 has 'keepalive' => (
     'is'    => 'rw',
-    'isa'   => 'Bool',
+    'isa'   => Bool,
     'default' => 0,
 );
 
 has '_json' => (
     'is'      => 'rw',
-    'isa'     => 'JSON',
+    'isa'     => InstanceOf['JSON'],
     'lazy'    => 1,
     'builder' => '_init_json',
 );
 
 has '_last_sent' => (
     'is'      => 'rw',
-    'isa'     => 'Int',
+    'isa'     => Int,
     'default' => 0,
 );
 
 has '_socket' => (
     'is'    => 'rw',
-    'isa'   => 'Maybe[IO::Socket]',
+    'isa'   => Maybe[ InstanceOf['IO::Socket'] ],
 );
 
 has 'response' => (
     'is'    => 'rw',
-    'isa'   => 'HashRef',
+    'isa'   => HashRef,
     'default'   => sub { {} },
 );
 
 has 'bulk_buf' => (
     'is'    => 'rw',
-    'isa'   => 'ArrayRef',
+    'isa'   => ArrayRef,
     'default'   => sub { [] },
 );
 
 has '_info' => (
     'is'    => 'rw',
-    'isa'      => 'Str',
+    'isa'      => Str,
 );
 
 has 'strict' => (
     'is'    => 'rw',
-    'isa'   => 'Bool',
+    'isa'   => Bool,
     'default' => 0,
 );
 
@@ -190,7 +191,7 @@ This may be changed to a HashRef if future version of zabbix change the header t
 
 has 'zabbix_template_1_8' => (
     'is'      => 'ro',
-    'isa'     => 'Str',
+    'isa'     => Str,
     'default' => "a4 b V V a*",
 );
 
