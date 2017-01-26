@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Test::More;
 
-unless ( $ENV{TEST_AUTHOR} ) {
+unless ( $ENV{RELEASE_TESTING} ) {
     plan( skip_all => "Author tests not required for installation" );
 }
 
